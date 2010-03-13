@@ -44,8 +44,21 @@ end
 
 %See if we need to ignore the terminal step.
 if get(handles.edt_ignore_term, 'Value') == get(handles.edt_ignore_term,'Max')
-    ignore_term = true;
+    contents = get(handles.term_algo,'String');
+    term_algo = contents{get(handles.term_algo,'Value')};
+    if strcmp(term_algo,'Chisquared')
+        ignore_term = true;
+        my_ignore_term = false;
+    else
+        ignore_term = false;
+        my_ignore_term = true;
+%         set(handles.edt_term_amp,'Visible','off');        
+%      set(handles.edt_term_p,'Visible','off');
+        terminal_amp = str2double(get(handles.edt_term_amp,'String'));
+        terminal_p = str2double(get(handles.edt_term_p,'String'));
+    end
 else
+    my_ignore_term = false;
     ignore_term = false;
 end
 
@@ -110,10 +123,17 @@ if handles.curindex == 1
     fprintf(fid, '#minimum_step_size:%f\n',minStepSize);
     fprintf(fid, '#baseline_variance:%f\n',var);
     fprintf(fid,'#ignore_terminal_step:');
-    if ignore_term %ignore the terminal step?
-        fprintf(fid, 'Yes\n')
+    if ignore_term || my_ignore_term %ignore the terminal step?
+        fprintf(fid, 'Yes\n');
+        fprintf(fid, '#terminal_removal_algo:');
+        fprintf(fid, strcat(term_algo,'\n'));
+        if my_ignore_term
+            fprintf(fid,'#terminal_removal_p_value:%e\n',terminal_p);
+            fprintf(fid,'#terminal_removal_amplitude:%f\n',terminal_amp);
+        end
+        
     else
-        fprintf(fid,'No\n')
+        fprintf(fid,'No\n');
     end
     fprintf(fid, strcat('#file_name:',handles.filename,'\n\n'));
     if label_states
@@ -321,7 +341,7 @@ if ((ignore_term && (size(term_step_matrix,1) > 2)) || ~ignore_term )
     %%%%%%%%%
     % JSJ: This algorithm requires post processing of discovered
     % Potential breakpoints. Here is where that occures.
-    if size(step_matrix,1) >= 1 %need more sophisticated step combining algorithm JSJ
+    if size(step_matrix,1) > 0 %need more sophisticated step combining algorithm JSJ
         if double_check && size(step_matrix,1) > 1
             i = 1;
             numLeft = size(step_matrix,1);
@@ -349,8 +369,37 @@ if ((ignore_term && (size(term_step_matrix,1) > 2)) || ~ignore_term )
                 
             end
         end
+        
+        %% ignore terminal steps by this simple algorithm if selected
+        if my_ignore_term
+            i = 0;
+            numLeft = size(step_matrix,1);
+            while i < numLeft
+                i = i + 1;
+                
+                leftStepAmp = mean(filt(step_matrix(i,1):step_matrix(i,2)));
+                rightStepAmp = terminal_amp;
+                
+                leftLength = step_matrix(i,2) - step_matrix(i,1);
+                rightLength = step_matrix(end,2) - step_matrix(i,2); %assume the rest is baseline
+                %F = @(xmean,ymean,xlen,ylen) ((xmean -
+                %ymean)^2)/(((1/xlen)+(1/ylen))*var);
+                p = erfc(sqrt(F(leftStepAmp,rightStepAmp,leftLength,rightLength)/2));
+                
+                if( p >= terminal_p || leftStepAmp < terminal_amp)
+                    %stepsToDel = [stepsToDel;i];
+                    
+                    step_matrix(i:end,:)=[];
+                    break; %everything else is terminal step.
+                    %step_matrix(i,:)=[];
+                end
+                
+            end
+        end
+        
+        
         %    number_of_steps = size(step_matrix,1);
-        if label_states
+        if label_states && size(step_matrix,1) > 0
             coord = struct('start',{-1},'end',{-1});
             state = struct('label',{-1},'mean',{-1},'length',{-1},'coords',{[coord]});
             %% Get first state
@@ -432,20 +481,22 @@ if ((ignore_term && (size(term_step_matrix,1) > 2)) || ~ignore_term )
         %                 disp(filt);
         %             end
         % Open the file and append these results to the end
-        fid = fopen(strcat(get(handles.edt_save_filename,'String'),'.txt'),'a');
-        if ignore_term
-            if label_states
-                for i = 1:size(step_matrix,1)-1 %ignore the terminal step
-                    fprintf(fid, '%20.15f\t%20.15f\t%20.15f\t%20.15f\t%d\n', time(step_matrix(i,1)),time(step_matrix(i,2)),time(step_matrix(i,2))-time(step_matrix(i,1)),mean(filt(step_matrix(i,1):step_matrix(i,2))), step_matrix(i,3));
+        if size(step_matrix,1) > 0
+            fid = fopen(strcat(get(handles.edt_save_filename,'String'),'.txt'),'a');
+            if ignore_term
+                if label_states
+                    for i = 1:size(step_matrix,1)-1 %ignore the terminal step
+                        fprintf(fid, '%20.15f\t%20.15f\t%20.15f\t%20.15f\t%d\n', time(step_matrix(i,1)),time(step_matrix(i,2)),time(step_matrix(i,2))-time(step_matrix(i,1)),mean(filt(step_matrix(i,1):step_matrix(i,2))), step_matrix(i,3));
+                    end
+                    fprintf(fid, '%20.15f\t%20.15f\t%d\t%d\t%d\n',time(end_point),time(end_point),0, -10000, -10000);%value to signify end of step matrix.
+                else
+                    for i = 1:size(step_matrix,1)-1 %ignore the terminal step
+                        fprintf(fid, '%20.15f\t%20.15f\t%20.15f\t%20.15f\n', time(step_matrix(i,1)),time(step_matrix(i,2)),time(step_matrix(i,2))-time(step_matrix(i,1)),mean(filt(step_matrix(i,1):step_matrix(i,2))));
+                    end
+                    fprintf(fid, '%20.15f\t%20.15f\t%d\t%d\n',time(end_point),time(end_point),0, -10000);%value to signify end of step matrix.
                 end
-                fprintf(fid, '%20.15f\t%20.15f\t%d\t%d\t%d\n',time(end_point),time(end_point),0, -10000, -10000);%value to signify end of step matrix.
             else
-                for i = 1:size(step_matrix,1)-1 %ignore the terminal step
-                    fprintf(fid, '%20.15f\t%20.15f\t%20.15f\t%20.15f\n', time(step_matrix(i,1)),time(step_matrix(i,2)),time(step_matrix(i,2))-time(step_matrix(i,1)),mean(filt(step_matrix(i,1):step_matrix(i,2))));
-                end
-                fprintf(fid, '%20.15f\t%20.15f\t%d\t%d\n',time(end_point),time(end_point),0, -10000);%value to signify end of step matrix.
             end
-        else
             if label_states
                 for i = 1:size(step_matrix,1)
                     fprintf(fid, '%20.15f\t%20.15f\t%20.15f\t%20.15f\t%d\n', time(step_matrix(i,1)),time(step_matrix(i,2)),time(step_matrix(i,2))-time(step_matrix(i,1)),mean(filt(step_matrix(i,1):step_matrix(i,2))), step_matrix(i,3));
@@ -457,8 +508,8 @@ if ((ignore_term && (size(term_step_matrix,1) > 2)) || ~ignore_term )
                 end
                 fprintf(fid, '%20.15f\t%20.15f\t%d\t%d\n',time(end_point),time(end_point),0, -10000);%value to signify end of step matrix.
             end
+            fclose(fid);
         end
-        fclose(fid);
         
         
         step = 1;

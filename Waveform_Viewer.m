@@ -25,7 +25,7 @@ function varargout = Waveform_Viewer(varargin)
 
 % Edit the above text to modify the response to help Waveform_Viewer
 
-% Last Modified by GUIDE v2.5 12-Mar-2010 10:10:10
+% Last Modified by GUIDE v2.5 12-Mar-2010 21:31:22
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -2790,7 +2790,28 @@ function edt_ignore_term_Callback(hObject, eventdata, handles)
 % hObject    handle to edt_ignore_term (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+ if get(hObject,'Value') == get(hObject,'Max')
+    set(handles.term_algo,'Visible','on');
+    contents = get(handles.term_algo,'String');
+    val = contents{get(handles.term_algo,'Value')};
+    if strcmp(val,'Simple')
+        set(handles.termpa,'Visible','on');
+        set(handles.termp,'Visible','on');
+        set(handles.edt_term_amp,'Visible','on');
+        set(handles.edt_term_p,'Visible','on');
+    else
+        set(handles.termpa,'Visible','off');
+        set(handles.termp,'Visible','off');
+        set(handles.edt_term_amp,'Visible','off');
+        set(handles.edt_term_p,'Visible','off');
+    end
+ else
+     set(handles.term_algo,'Visible','off');
+     set(handles.termpa,'Visible','off');
+     set(handles.termp,'Visible','off');
+     set(handles.edt_term_amp,'Visible','off');        
+     set(handles.edt_term_p,'Visible','off');
+ end
 % Hint: get(hObject,'Value') returns toggle state of edt_ignore_term
 
 
@@ -2799,4 +2820,86 @@ function edt_ignore_term_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to edt_ignore_term (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-    set(hObject,'Value',get(hObject,'Min'));
+    set(hObject,'Value',get(hObject,'Max'));
+
+
+% --- Executes on selection change in term_algo.
+function term_algo_Callback(hObject, eventdata, handles)
+% hObject    handle to term_algo (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = get(hObject,'String') returns term_algo contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from term_algo
+    contents = get(hObject,'String');
+    val = contents{get(hObject,'Value')};
+    if strcmp(val,'Simple')
+        set(handles.termpa,'Visible','on');
+        set(handles.termp,'Visible','on');
+        set(handles.edt_term_amp,'Visible','on');
+        set(handles.edt_term_p,'Visible','on');
+    else
+        set(handles.termpa,'Visible','off');
+        set(handles.termp,'Visible','off');
+        set(handles.edt_term_amp,'Visible','off');
+        set(handles.edt_term_p,'Visible','off');
+    end
+
+
+% --- Executes during object creation, after setting all properties.
+function term_algo_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to term_algo (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edt_term_amp_Callback(hObject, eventdata, handles)
+% hObject    handle to edt_term_amp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edt_term_amp as text
+%        str2double(get(hObject,'String')) returns contents of edt_term_amp as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edt_term_amp_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edt_term_amp (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edt_term_p_Callback(hObject, eventdata, handles)
+% hObject    handle to edt_term_p (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edt_term_p as text
+%        str2double(get(hObject,'String')) returns contents of edt_term_p as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edt_term_p_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edt_term_p (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
