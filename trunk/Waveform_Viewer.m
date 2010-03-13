@@ -2799,4 +2799,4 @@ function edt_ignore_term_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to edt_ignore_term (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-    set(hObject,'Value',get(hObject,'Max'));
+    set(hObject,'Value',get(hObject,'Min'));
